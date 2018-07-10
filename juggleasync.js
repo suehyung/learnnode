@@ -1,24 +1,28 @@
 var http = require('http')
-var concatStream = require('concat-stream')
-var urls = [process.argv[2], process.argv[3], process.argv[4]]
-var completedRequests = 0
-var requestData = []
+var bl = require('bl')
 
-for (i in urls) {
-  http.get(urls[i], (response) => {
-    response.pipe(concatStream(function (err, data) {
+var queue = []
+var count = 0
+
+function httpGet (index) {
+  http.get(process.argv[2 + index], function (response) {
+    response.pipe(bl(function (err, data) { 
       if (err) {
         return console.error(err)
       }
-      completedRequests++
-      requestData.push(data.toString())
+
+      queue[index] = data.toString()
+      count++
+      
+      if (count === 3) {
+        queue.forEach(function (result) {
+          console.log(result)
+        })
+      }
     }))
   })
-  if (completedRequests == urls.length) {
-    for (i in requestData) {
-      console.log(requestData[i])
-    }
-  }
 }
 
-
+for (var i = 0; i < 3; i++) {
+  httpGet(i)
+}
